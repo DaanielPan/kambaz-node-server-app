@@ -86,4 +86,45 @@ export default function AssignmentsRoutes(app, db) {
     }
   };
   app.delete("/api/assignments/:assignmentId", deleteAssignmentOld);
+
+  // COURSE-LEVEL ASSIGNMENT ROUTES
+  const findAssignmentsForCourse = async (req, res) => {
+    const { courseId } = req.params;
+    const assignments = await dao.findAssignmentsForCourse(courseId);
+    res.json(assignments);
+  };
+  app.get("/api/courses/:courseId/assignments", findAssignmentsForCourse);
+
+  const createAssignmentForCourse = async (req, res) => {
+    const { courseId } = req.params;
+    try {
+      const newAssignment = await dao.createAssignmentForCourse(courseId, req.body);
+      res.json(newAssignment);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  };
+  app.post("/api/courses/:courseId/assignments", createAssignmentForCourse);
+
+  const updateAssignmentForCourse = async (req, res) => {
+    const { courseId, assignmentId } = req.params;
+    try {
+      const updated = await dao.updateAssignmentForCourse(courseId, assignmentId, req.body);
+      res.json(updated);
+    } catch (error) {
+      res.status(404).json({ message: error.message });
+    }
+  };
+  app.put("/api/courses/:courseId/assignments/:assignmentId", updateAssignmentForCourse);
+
+  const deleteAssignmentForCourse = async (req, res) => {
+    const { courseId, assignmentId } = req.params;
+    try {
+      const result = await dao.deleteAssignmentForCourse(courseId, assignmentId);
+      res.json(result);
+    } catch (error) {
+      res.status(404).json({ message: error.message });
+    }
+  };
+  app.delete("/api/courses/:courseId/assignments/:assignmentId", deleteAssignmentForCourse);
 }

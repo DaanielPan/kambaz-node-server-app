@@ -70,15 +70,73 @@ export default function AssignmentsDao(db) {
     return deleteAssignment(courseId, moduleId, assignmentId);
   }
 
+  async function findAssignmentsForCourse(courseId) {
+    const course = await model.findById(courseId);
+    if (!course) return [];
+    const allAssignments = [];
+    course.modules.forEach((module) => {
+      if (module.assignments && module.assignments.length > 0) {
+        module.assignments.forEach((assignment) => {
+          allAssignments.push({
+            ...assignment.toObject(),
+            moduleId: module._id,
+            moduleName: module.name,
+          });
+        });
+      }
+    });
+    return allAssignments;
+  }
+
+  async function findModuleIdByAssignmentId(courseId, assignmentId) {
+    const course = await model.findById(courseId);
+    if (!course) return null;
+    for (const module of course.modules) {
+      const assignment = module.assignments.id(assignmentId);
+      if (assignment) {
+        return module._id;
+      }
+    }
+    return null;
+  }
+
+  async function createAssignmentForCourse(courseId, assignment) {
+    const { moduleId, ...assignmentData } = assignment;
+    if (!moduleId) {
+      throw new Error("moduleId is required in request body");
+    }
+    return createAssignment(courseId, moduleId, assignmentData);
+  }
+
+  async function updateAssignmentForCourse(courseId, assignmentId, assignmentUpdates) {
+    const moduleId = await findModuleIdByAssignmentId(courseId, assignmentId);
+    if (!moduleId) {
+      throw new Error("Assignment not found in course");
+    }
+    return updateAssignment(courseId, moduleId, assignmentId, assignmentUpdates);
+  }
+
+  async function deleteAssignmentForCourse(courseId, assignmentId) {
+    const moduleId = await findModuleIdByAssignmentId(courseId, assignmentId);
+    if (!moduleId) {
+      throw new Error("Assignment not found in course");
+    }
+    return deleteAssignment(courseId, moduleId, assignmentId);
+  }
+
   return {
     findCourseIdByModuleId,
     findAssignmentsForModule,
     findAssignmentsForModuleById,
+    findAssignmentsForCourse,
     createAssignment,
     createAssignmentByModuleId,
+    createAssignmentForCourse,
     updateAssignment,
     updateAssignmentByModuleId,
+    updateAssignmentForCourse,
     deleteAssignment,
     deleteAssignmentByModuleId,
+    deleteAssignmentForCourse,
   };
 }
