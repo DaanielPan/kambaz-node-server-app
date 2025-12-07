@@ -18,10 +18,34 @@ mongoose.connect(CONNECTION_STRING);        // connect to the kambaz database
 
 const app = express();
 
+// Configure allowed origins for CORS
+const allowedOrigins = [
+  "http://localhost:3000",
+  process.env.CLIENT_URL,
+  // Support Vercel preview deployments
+  ...(process.env.CLIENT_URLS ? process.env.CLIENT_URLS.split(",") : []),
+].filter(Boolean); // Remove any undefined values
+
 app.use(
   cors({
     credentials: true,
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      // Allow Vercel preview deployments (they have a pattern)
+      if (origin.includes("vercel.app")) {
+        return callback(null, true);
+      }
+      
+      // Default: deny
+      callback(new Error("Not allowed by CORS"));
+    },
   })
 );
 
